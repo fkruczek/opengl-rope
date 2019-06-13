@@ -1,0 +1,17 @@
+﻿  Gl_template.cpp
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(267): warning C4018: '<': signed/unsigned mismatch
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(283): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(284): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(285): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(286): warning C4838: conversion from 'int' to 'GLfloat' requires a narrowing conversion
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(286): warning C4244: 'initializing': conversion from 'int' to 'GLfloat', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(298): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(299): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(300): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(301): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(559): warning C4244: 'return': conversion from 'WPARAM' to 'int', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(762): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(763): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(804): warning C4101: 'i': unreferenced local variable
+c:\users\fryderyk\desktop\semestr 4\grafika\lab2\szescian — kopia\gl_template.cpp(805): warning C4101: 'glError': unreferenced local variable
+  szescian.vcxproj -> C:\Users\Fryderyk\Desktop\Semestr 4\grafika\lab2\szescian — kopia\x64\Debug\szescian.exe
