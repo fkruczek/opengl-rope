@@ -1,10 +1,10 @@
-// Gl_template.c
-//Wy≥öczanie b≥ÍdÛw przed "fopen"
+Ôªø// Gl_template.c
+//Wy≈Ç≈°czanie b≈Çƒôd√≥w przed "fopen"
 #define  _CRT_SECURE_NO_WARNINGS
 
+#include <AntTweakBar.h>
 
-
-// £adowanie bibliotek:
+// ≈Åadowanie bibliotek:
 
 #ifdef _MSC_VER                         // Check if MS Visual C compiler
 #  pragma comment(lib, "opengl32.lib")  // Compiler-specific directive to avoid manually configuration
@@ -12,7 +12,7 @@
 #endif
 
 
-
+bool ButtonL;
 
 // Ustalanie trybu tekstowego:
 #ifdef _MSC_VER        // Check if MS Visual C compiler
@@ -31,12 +31,17 @@
 #include <gl\glu.h>             // GLU library
 #include <math.h>				// Define for sqrt
 #include <stdio.h>
+#include <stdlib.h>     /* srand, rand */
+#include <time.h> 
 #include "resource.h"           // About box resource identifiers.
 #include "szescian/Header.h"
+#include "packages/glut-3.7.6-bin/glut.h"
 #define glRGB(x, y, z)	glColor3ub((GLubyte)x, (GLubyte)y, (GLubyte)z)
 #define BITMAP_ID 0x4D42		// identyfikator formatu BMP
 #define GL_PI 3.14
+#define _WIN32_WINNT 0x0500
 
+HHOOK MouseHook;
 // Color Palette handle
 HPALETTE hPalette = NULL;
 
@@ -51,15 +56,26 @@ static GLfloat yRot = 0.0f;
 
 static GLsizei lastHeight;
 static GLsizei lastWidth;
-
-GLfloat params[7] = { 20.0f,10.0f,0.0f,-20.0f,10.0f, 0.0f, 0.9f};
+static double hight_model = 10;
+static double width_model = 10;
+static float freq = 10;
+static int points = 20;
+static float size = 3;
+static int stop = 0;
+static int s1;
+static int s2;
+static int s3;
+static bool start = false;
+GLfloat params[7] = { 10.0f,10.0f,10.0f,10.0f,60.0f, 1.0f, 0.9f};
 int iterations = 1;
 // Opis tekstury
-BITMAPINFOHEADER	bitmapInfoHeader;	// nag≥Ûwek obrazu
+BITMAPINFOHEADER	bitmapInfoHeader;	// nag≈Ç√≥wek obrazu
 unsigned char*		bitmapData;			// dane tekstury
 unsigned int		texture[2];			// obiekt tekstury
 
+float color0[] = { 1.0f, 0.5f, 0.0f };
 
+float color1[] = { 0.5f, 1.0f, 0.0f };
 // Declaration for Window procedure
 LRESULT CALLBACK WndProc(   HWND    hWnd,
 							UINT    message,
@@ -72,10 +88,25 @@ BOOL APIENTRY AboutDlgProc (HWND hDlg, UINT message, UINT wParam, LONG lParam);
 // Set Pixel Format function - forward declaration
 void SetDCPixelFormat(HDC hDC);
 
-
-
 // Reduces a normal vector specified as a set of three coordinates,
 // to a unit normal vector of length one.
+int keyPressed(int key) {
+	return (GetAsyncKeyState(key) & 0x8000 != 0);
+}
+LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
+
+	PKBDLLHOOKSTRUCT k = (PKBDLLHOOKSTRUCT)(lParam);
+	POINT p;
+
+
+	if (wParam == WM_RBUTTONDOWN)
+	{
+		// right button clicked 
+		GetCursorPos(&p);
+	}
+	return (0L);
+}
+
 void ReduceToUnit(float vector[3])
 	{
 	float length;
@@ -145,6 +176,7 @@ void ChangeSize(GLsizei w, GLsizei h)
 
 	// Reset coordinate system
 	glMatrixMode(GL_PROJECTION);
+	if (ButtonL) glTranslated(0, -0.5, 0);
 	glLoadIdentity();
 
 	// Establish clipping volume (left, right, bottom, top, near, far)
@@ -157,7 +189,6 @@ void ChangeSize(GLsizei w, GLsizei h)
 	/*
 	gluPerspective(60.0f,fAspect,1.0,400);
 	*/
-
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	}
@@ -210,23 +241,23 @@ void SetupRC()
 	}
 
 // LoadBitmapFile
-// opis: ≥aduje mapÍ bitowπ z pliku i zwraca jej adres.
-//       Wype≥nia strukturÍ nag≥Ûwka.
-//	 Nie obs≥uguje map 8-bitowych.
+// opis: ≈Çaduje mapƒô bitowƒÖ z pliku i zwraca jej adres.
+//       Wype≈Çnia strukturƒô nag≈Ç√≥wka.
+//	 Nie obs≈Çuguje map 8-bitowych.
 unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 {
-	FILE *filePtr;							// wskaünik pozycji pliku
-	BITMAPFILEHEADER	bitmapFileHeader;		// nag≥Ûwek pliku
+	FILE *filePtr;							// wska≈∫nik pozycji pliku
+	BITMAPFILEHEADER	bitmapFileHeader;		// nag≈Ç√≥wek pliku
 	unsigned char		*bitmapImage;			// dane obrazu
 	int					imageIdx = 0;		// licznik pikseli
-	unsigned char		tempRGB;				// zmienna zamiany sk≥adowych
+	unsigned char		tempRGB;				// zmienna zamiany sk≈Çadowych
 
 	// otwiera plik w trybie "read binary"
 	filePtr = fopen(filename, "rb");
 	if (filePtr == NULL)
 		return NULL;
 
-	// wczytuje nag≥Ûwek pliku
+	// wczytuje nag≈Ç√≥wek pliku
 	fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
 	
 	// sprawdza, czy jest to plik formatu BMP
@@ -236,16 +267,16 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 		return NULL;
 	}
 
-	// wczytuje nag≥Ûwek obrazu
+	// wczytuje nag≈Ç√≥wek obrazu
 	fread(bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
 
-	// ustawia wskaünik pozycji pliku na poczπtku danych obrazu
+	// ustawia wska≈∫nik pozycji pliku na poczƒÖtku danych obrazu
 	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
-	// przydziela pamiÍÊ buforowi obrazu
+	// przydziela pamiƒôƒá buforowi obrazu
 	bitmapImage = (unsigned char*)malloc(bitmapInfoHeader->biSizeImage);
 
-	// sprawdza, czy uda≥o siÍ przydzieliÊ pamiÍÊ
+	// sprawdza, czy uda≈Ço siƒô przydzieliƒá pamiƒôƒá
 	if (!bitmapImage)
 	{
 		free(bitmapImage);
@@ -256,14 +287,14 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 	// wczytuje dane obrazu
 	fread(bitmapImage, 1, bitmapInfoHeader->biSizeImage, filePtr);
 
-	// sprawdza, czy dane zosta≥y wczytane
+	// sprawdza, czy dane zosta≈Çy wczytane
 	if (bitmapImage == NULL)
 	{
 		fclose(filePtr);
 		return NULL;
 	}
 
-	// zamienia miejscami sk≥adowe R i B 
+	// zamienia miejscami sk≈Çadowe R i B 
 	for (imageIdx = 0; imageIdx < bitmapInfoHeader->biSizeImage; imageIdx+=3)
 	{
 		tempRGB = bitmapImage[imageIdx];
@@ -271,38 +302,125 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 		bitmapImage[imageIdx + 2] = tempRGB;
 	}
 
-	// zamyka plik i zwraca wskaünik bufora zawierajπcego wczytany obraz
+	// zamyka plik i zwraca wska≈∫nik bufora zawierajƒÖcego wczytany obraz
 	fclose(filePtr);
 	return bitmapImage;
 }
+// Callback function called by GLUT when window size changes
+void OnReshape(int width, int height)
+{
+	// Set OpenGL viewport
+	glViewport(0, 0, width, height);
 
-void gumka(GLfloat *params, int iterations)
+	// Send the new window size to AntTweakBar
+	TwWindowSize(width, height);
+}
+
+// Function called at exit
+void OnTerminate(void)
+{
+	// terminate AntTweakBar
+	TwTerminate();
+}
+
+// Event callbacks
+void OnMouseButton(int glutButton, int glutState, int mouseX, int mouseY)
+{
+	// send event to AntTweakBar
+	if (TwEventMouseButtonGLUT(glutButton, glutState, mouseX, mouseY))
+		glutPostRedisplay(); // request redraw if event has been handled
+}
+
+void OnMouseMotion(int mouseX, int mouseY)
+{
+	// send event to AntTweakBar
+	if (TwEventMouseMotionGLUT(mouseX, mouseY))
+		glutPostRedisplay(); // request redraw if event has been handled
+}
+
+void OnKeyboard(unsigned char glutKey, int mouseX, int mouseY)
+{
+	// send event to AntTweakBar
+	if (TwEventKeyboardGLUT(glutKey, mouseX, mouseY))
+		glutPostRedisplay(); // request redraw if event has been handled
+}
+
+void OnSpecial(int glutKey, int mouseX, int mouseY)
+{
+	// send event to AntTweakBar
+	if (TwEventSpecialGLUT(glutKey, mouseX, mouseY))
+		glutPostRedisplay(); // request redraw if event has been handled
+}
+GLfloat **spiral(int a, int b, int c, int d, int k) {
+#define AM 20
+#define M_PI 3.141592
+	float clr = 0.5f;
+	//AM points;
+	int i = 0;
+	//int t=AM;
+	GLfloat **vertices = new GLfloat*[AM];
+
+	float t;
+	float step = 1.0f / (float)AM;
+	for (t = 0.0f; t < 1.0f && i < AM; t += step, i++)
+	{
+		vertices[i] = new GLfloat[3];
+		//polozenie punktu wzgledem osi x
+		vertices[i][0] = cos(2 * M_PI * k * t) * sqrt(d * t) * b;
+		//polozenie punktu wzgledem osi y
+		vertices[i][1] = sin(2 * M_PI * k * t) * sqrt(d * t) * b;
+		//polozenie punktu wzgledem osi z
+		vertices[i][2] = (float)(t * c) - 60.0f;
+	}
+	/*
+	glLineWidth(size);
+	glBegin(GL_LINE_STRIP);
+	for (i = 0; i < AM; i++) {
+		glVertex3fv(vertices[i]);
+		glColor3f(clr, clr / 40.0f, clr / 0.5f);
+		//glColor3f(clr, clr / 2.0f, clr / 2.0f);
+		clr += step;
+	}
+	glEnd();
+	*/
+	return vertices;
+}
+void floor() {
+	glLineWidth(2);
+	glColor3f(1.0, 1.0, 1.0);
+	glBegin(GL_LINES);
+	for (GLfloat i = -60.0; i <= 60.0; i += 6.0) {
+		glVertex3f(i, -50.0, 60.0); glVertex3f(i, -50.0, -60.0);
+		glVertex3f(60.0, -50.0, i); glVertex3f(-60.0, -50.0, i);
+	}
+	glEnd();
+}
+void gumka()
 {
 	#define AMOUNT 20
 	GLfloat col_r = 0.0f;
-	static int s1 = float(rand() % 50 - 50);
-	static int s2 = float(rand() % 50 - 50);
-	static int s3 = float(rand() % 50 - 50);
-	GLfloat s[3] = {s1, s2, s3};
+	GLfloat **st_pnts = spiral(params[0], params[1], params[2], params[3], params[4]);
 	//czerwony
-	GLfloat sa[3] = { params[0], params[1], params[2] };
+	GLfloat sa[3] = { st_pnts[0][0], st_pnts[0][1], st_pnts[0][2] };
+	GLfloat s[3];
 	//niebieski
-	GLfloat sb[3] = { params[3], params[4], params[5] };
-
+	GLfloat sb[3] = { st_pnts[19][0], st_pnts[19][1], st_pnts[19][2] };
 	point points[AMOUNT];
-	points[0].set_tie_a(params[0], params[1], params[2]);
-	points[0].set_start_position(s[0], s[1], s[2]);
-	points[AMOUNT-1].set_tie_b(params[3], params[4], params[5]);
-	points[AMOUNT-1].set_start_position(s[0], s[1], s[2]);
-	for (int i = 1; i < AMOUNT-1; i++) {
-		s1 = float(rand() % 50 - 50);
-		s2 = float(rand() % 50 - 50);
-		s3 = float(rand() % 50 - 50);
-		points[i].set_start_position(s1, s2, s3);
-	}
-	glLineWidth(5.0f);
-	glPointSize(12);
 
+	points[0].set_tie_a(st_pnts[0][0], st_pnts[0][1], st_pnts[0][2]);
+	points[0].set_start_position(st_pnts[1][0], st_pnts[1][1], st_pnts[1][2]);
+	points[AMOUNT-1].set_start_position(st_pnts[18][0], st_pnts[18][1], st_pnts[18][2]);
+	points[AMOUNT-1].set_tie_b(st_pnts[19][0], st_pnts[19][1], st_pnts[19][2]);
+
+	for (int i = 1; i < AMOUNT-1; i++) {
+		points[i].set_start_position(st_pnts[i][0], st_pnts[i][1], st_pnts[i][2]);
+	}
+	glLineWidth(4.0f);
+
+	for (int i = 0; i < AMOUNT; i++) {
+		delete[] st_pnts[i];
+	}
+	delete[] st_pnts;
 
 	int iter = iterations;
 	for (int i = 0; i < iter; i++) {
@@ -319,21 +437,29 @@ void gumka(GLfloat *params, int iterations)
 		}
 	}
 
+	float clr = 0.5f;
+	float step = 1.0f / (float)AMOUNT;
 	glBegin(GL_LINE_STRIP);
 	glColor3f(0.8f, 0.2f, 0.1f);
-	glVertex3fv(sa);
+//	glVertex3fv(sa);
 	glColor3f(0.9f, 0.9f, 0.9f);
 	for (int i = 0; i < AMOUNT; i++) {
 		s[0] = *points[i].get_position();
-		s[1] = *(points[i].get_position()+1);
-		s[2] = *(points[i].get_position()+2);
+		s[1] = *(points[i].get_position() + 1);
+		s[2] = *(points[i].get_position() + 2);
+		glColor3f(clr, clr / 30.0f, clr / 0.5f);
+		
+//		glColor3f(clr, clr / 2.0f, clr / 2.0f);
 		glVertex3fv(s);
+
+		clr += step;
 	}
 	glColor3f(0.2f, 0.1f, 0.8f);
 	glVertex3fv(sb);
 
 	glEnd();
-
+	/*
+	glPointSize(5);
 	glBegin(GL_POINTS);
 	glColor3f(0.2f, 0.9f, 0.2f);
 	for (int i = 0; i < AMOUNT; i++) {
@@ -343,8 +469,102 @@ void gumka(GLfloat *params, int iterations)
 		glVertex3fv(s);
 	}
 	glEnd();
+	*/
+}
+void OnDisplay(void)
+{
+	// Clear frame buffer
+	glClearColor(0.5f, 0.5f, 0.6f, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// App drawing here
+	// ...
+
+	// Draw tweak bars
+	TwDraw();
+
+	// Present frame buffer
+	glutSwapBuffers();
 }
 
+void rysuj()
+{
+	int argc = 1;
+	char *argv[1] = { (char*)"Something" };
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	glutInitWindowSize(640, 480);
+	glutCreateWindow("AntTweakBar string example");
+	glutCreateMenu(NULL);
+
+	// Set GLUT callbacks
+	glutDisplayFunc(OnDisplay);
+	glutReshapeFunc(OnReshape);
+	atexit(OnTerminate);  // Called after glutMainLoop ends
+
+	// Initialize AntTweakBar
+	TwInit(TW_OPENGL, NULL);
+
+	// Set GLUT event callbacks
+	// - Directly redirect GLUT mouse button events to AntTweakBar
+	glutMouseFunc(OnMouseButton);
+	// - Directly redirect GLUT mouse motion events to AntTweakBar
+	glutMotionFunc(OnMouseMotion);
+	// - Directly redirect GLUT mouse "passive" motion events to AntTweakBar (same as MouseMotion)
+	glutPassiveMotionFunc(OnMouseMotion);
+	// - Directly redirect GLUT key events to AntTweakBar
+	glutKeyboardFunc(OnKeyboard);
+	// - Directly redirect GLUT special key events to AntTweakBar
+	glutSpecialFunc(OnSpecial);
+	// - Send 'glutGetModifers' function pointer to AntTweakBar;
+	//   required because the GLUT key event functions do not report key modifiers states.
+	TwGLUTModifiersFunc(glutGetModifiers);
+}
+void RenderScene2(void)
+{
+	//float normal[3];	// Storeage for calculated surface normal
+
+	// Clear the window with current clearing color
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Save the matrix state and do the rotations
+	glPushMatrix();
+	glRotatef(xRot, 1.0f, 0.0f, 0.0f);
+	glRotatef(yRot, 0.0f, 1.0f, 0.0f);
+
+	/////////////////////////////////////////////////////////////////
+	// MIEJSCE NA KOD OPENGL DO TWORZENIA WLASNYCH SCEN:		   //
+	/////////////////////////////////////////////////////////////////
+	//szescian();
+
+	//Spos√≥b na odr√≥≈∫nienie "przedniej" i "tylniej" ≈õciany wielokƒÖta:
+	glPolygonMode(GL_BACK, GL_LINE);
+	//walec(40, 40);
+
+	srand(5);
+	gumka();
+	//iterations++;
+
+/*if (start == true)
+{
+	for (int i = 0; i < 300; i++)
+	{
+		srand(5);
+		gumka();
+		iterations++;
+	}
+	start = false;
+}*/
+	floor();
+	//spiral(2, width_model, hight_model, 2, freq);
+	/*glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+
+	// Flush drawing commands
+	glFlush();*/
+	TwDraw();
+	//glutMainLoop();//loops the current event
+}
 
 // Called to draw scene
 void RenderScene(void)
@@ -364,26 +584,25 @@ void RenderScene(void)
 	/////////////////////////////////////////////////////////////////
 	//szescian();
 	
-	//SposÛb na odrÛünienie "przedniej" i "tylniej" úciany wielokπta:
+	//Spos√≥b na odr√≥≈∫nienie "przedniej" i "tylniej" ≈õciany wielokƒÖta:
 	glPolygonMode(GL_BACK,GL_LINE);
 	//walec(40, 40);
-	srand(5);
-	gumka(params, iterations);
-	//Uzyskanie siatki:
-	//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
-	//Wyrysowanie prostokata:
-	//glRectd(-10.0,-10.0,20.0,20.0);
-		
-	/////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////
-	glPopMatrix();
+		srand(5);
+		gumka();
+
+
+	floor();
+	//spiral(2, width_model, hight_model, 2, freq);
+	/*glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 
 	// Flush drawing commands
-	glFlush();
+	glFlush();*/
+	TwDraw();
+	//glutMainLoop();//loops the current event
 	}
+
 
 
 // Select the pixel format for a given device context
@@ -490,7 +709,49 @@ HPALETTE GetOpenGLPalette(HDC hDC)
 	// Return the handle to the new palette
 	return hRetPal;
 	}
+float r, g, b, x, y;
+bool check = true;
+void mouse(int button, int state, int mousex, int mousey)
+{
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		check = true;
 
+		x = mousex;
+		y = 480 - mousey;
+
+		r = (rand() % 9) / 8;
+		g = (rand() % 9) / 8;
+		b = (rand() % 9) / 8;
+	}
+
+	else if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)//undo(clear)the drawing
+	{
+		glClearColor(1, 1, 1, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		check = false;
+	}
+	glutPostRedisplay();
+}
+void display(void)
+{
+	glColor3f(r, g, b); // sets the current drawing (foreground) color to blue 
+	glPointSize(50); // sets the size of points to be drawn (in pixels)
+
+	glMatrixMode(GL_PROJECTION);// sets the current matrix to projection
+	glLoadIdentity();//multiply the current matrix by identity matrix
+	gluOrtho2D(0.0, 640, 0.0, 480);//sets the parallel(orthographic) projection of the full frame buffer 
+
+	if (check)
+	{
+		glBegin(GL_POINTS); // writes pixels on the frame buffer with the current drawing color
+		glVertex2i(x, y);   // sets vertex
+		
+		glEnd();
+	}
+	gumka();
+	glFlush();     // flushes the frame buffer to the screen
+}
 
 // Entry point of all Windows programs
 int APIENTRY WinMain(   HINSTANCE       hInst,
@@ -498,6 +759,7 @@ int APIENTRY WinMain(   HINSTANCE       hInst,
 						LPSTR           lpCmdLine,
 						int                     nCmdShow)
 	{
+	static TCHAR lpszAppName[] = TEXT("Connect");
 	MSG                     msg;            // Windows message structure
 	WNDCLASS        wc;                     // Windows class structure
 	HWND            hWnd;           // Storeage for window handle
@@ -520,8 +782,11 @@ int APIENTRY WinMain(   HINSTANCE       hInst,
 	wc.lpszClassName        = lpszAppName;
 
 	// Register the window class
-	if(RegisterClass(&wc) == 0)
+	if (RegisterClass(&wc) == 0)
+	{
+		MessageBox(NULL, TEXT("Program requires Windows NT!"), lpszAppName, MB_ICONERROR);
 		return FALSE;
+	}
 
 
 	// Create the main application window
@@ -533,32 +798,79 @@ int APIENTRY WinMain(   HINSTANCE       hInst,
 				WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 	
 				// Window position and size
-				50, 50,
-				400, 400,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
 				NULL,
 				NULL,
 				hInstance,
 				NULL);
+	/*int argc = 1;
+	char *argv[1] = { (char*)"Something" };
+		glutInit(&argc, argv);
+		glutInitWindowSize(640, 480);   //sets the width and height of the window in pixels
+		glutInitWindowPosition(10, 10);//sets the position of the window in pixels from top left corner 
+		glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);//creates a single frame buffer of RGB color capacity.
+		glutCreateWindow("DDA Line Drawing");//creates the window as specified by the user as above.
 
+		glClearColor(1, 1, 1, 0); // sets the backgraound color to white light
+		glClear(GL_COLOR_BUFFER_BIT); // clears the frame buffer and set values defined in glClearColor() function call 
+
+		glutDisplayFunc(display);//links the display event with the display event handler(display)
+		glutMouseFunc(mouse);//keyboard event handler
+		//glutMainLoop();//loops the current event
+	 TwInit(TW_OPENGL, NULL);
+	 */
+	/*glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0); // use default light diffuse and position
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_COLOR_MATERIAL);
+	glDisable(GL_CULL_FACE);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);*/
 	// If window was not created, quit
-	if(hWnd == NULL)
-		return FALSE;
+	TwInit(TW_OPENGL, NULL);
+	TwWindowSize(600, 400);
+	TwBar *myBar;
+	myBar = TwNewBar("Parameters");
+	TwAddVarRW(myBar, "Params[0]", TW_TYPE_FLOAT, &params[0], "");
+	TwAddVarRW(myBar, "Params[1]", TW_TYPE_FLOAT, &params[1], "");
+	TwAddVarRW(myBar, "Params[2]", TW_TYPE_FLOAT, &params[2], "");
+	TwAddVarRW(myBar, "Params[3]", TW_TYPE_FLOAT, &params[3], "");
+	TwAddVarRW(myBar, "Params[4]", TW_TYPE_FLOAT, &params[4], "");
+	TwAddVarRW(myBar, "Params[5]", TW_TYPE_FLOAT, &params[5], "");
+	TwAddVarRW(myBar, "Params[6]", TW_TYPE_FLOAT, &params[6], "");
+	TwAddVarRW(myBar, "Iterations", TW_TYPE_INT32, &iterations, "");
+	TwAddVarRW(myBar, "width_model", TW_TYPE_FLOAT, &iterations,
+		" label='X path coeff' keyIncr=1 keyDecr=CTRL+1 min=-10 max=100 step=1 ");
 
+	//TwAddButton(myBar, "Run", RunCB, NULL, "label = 'Pokemon'");
 
-	// Display the window
-	ShowWindow(hWnd,SW_SHOW);
-	UpdateWindow(hWnd);
+	MouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseHookProc, hInstance, 0);
+	iterations++;
 
+	UnhookWindowsHookEx(MouseHook);
 	// Process application messages until the application closes
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 	while( GetMessage(&msg, NULL, 0, 0))
 		{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		}
 
+	//glutMainLoop();//loops the current event
 	return msg.wParam;
+
 	}
 
+// In the Windows MessageProc callback
+LRESULT CALLBACK MessageProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (TwEventWin(wnd, msg, wParam, lParam)) // send event message to AntTweakBar
+		return 0; // event has been handled by AntTweakBar
+	// else process the event message
+	// ...
+}
 
 
 
@@ -572,200 +884,266 @@ LRESULT CALLBACK WndProc(       HWND    hWnd,
 	static HDC hDC;                 // Private GDI Device context
 
 	switch (message)
-		{
+	{
 		// Window creation, setup for OpenGL
-		case WM_CREATE:
-			// Store the device context
-			hDC = GetDC(hWnd);              
+	case WM_CREATE:
+		// Store the device context
+		hDC = GetDC(hWnd);
+		//TwInit(TW_OPENGL_CORE, NULL);
+		//TwInit(TW_OPENGL, NULL);
+		TwWindowSize(400, 600);
+		// Select the pixel format
+		SetDCPixelFormat(hDC);
 
-			// Select the pixel format
-			SetDCPixelFormat(hDC);          
+		// Create palette if needed
+		hPalette = GetOpenGLPalette(hDC);
 
-			// Create palette if needed
-			hPalette = GetOpenGLPalette(hDC);
+		// Create the rendering context and make it current
+		hRC = wglCreateContext(hDC);
+		wglMakeCurrent(hDC, hRC);
+		SetupRC();
+		glGenTextures(2, &texture[0]);                  // tworzy obiekt tekstury			
 
-			// Create the rendering context and make it current
-			hRC = wglCreateContext(hDC);
-			wglMakeCurrent(hDC, hRC);
-			SetupRC();
-			glGenTextures(2, &texture[0]);                  // tworzy obiekt tekstury			
-			
-			// ≥aduje pierwszy obraz tekstury:
-			bitmapData = LoadBitmapFile("Bitmapy\\checker.bmp", &bitmapInfoHeader);
-			
-			glBindTexture(GL_TEXTURE_2D, texture[0]);       // aktywuje obiekt tekstury
+		// ≈Çaduje pierwszy obraz tekstury:
+		bitmapData = LoadBitmapFile("Bitmapy\\checker.bmp", &bitmapInfoHeader);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, texture[0]);       // aktywuje obiekt tekstury
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-			// tworzy obraz tekstury
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth,
-						 bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
-			
-			if(bitmapData)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		// tworzy obraz tekstury
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth,
+			bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
+
+		if (bitmapData)
 			free(bitmapData);
 
-			// ≥aduje drugi obraz tekstury:
-			bitmapData = LoadBitmapFile("Bitmapy\\crate.bmp", &bitmapInfoHeader);
-			glBindTexture(GL_TEXTURE_2D, texture[1]);       // aktywuje obiekt tekstury
+		// ≈Çaduje drugi obraz tekstury:
+		bitmapData = LoadBitmapFile("Bitmapy\\crate.bmp", &bitmapInfoHeader);
+		glBindTexture(GL_TEXTURE_2D, texture[1]);       // aktywuje obiekt tekstury
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-			// tworzy obraz tekstury
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth,
-						 bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
-			
-			if(bitmapData)
+		// tworzy obraz tekstury
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth,
+			bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
+
+
+
+		if (bitmapData)
 			free(bitmapData);
 
-			// ustalenie sposobu mieszania tekstury z t≥em
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_MODULATE);
-			break;
+		// ustalenie sposobu mieszania tekstury z t≈Çem
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		break;
 
 		// Window is being destroyed, cleanup
-		case WM_DESTROY:
-			// Deselect the current rendering context and delete it
-			wglMakeCurrent(hDC,NULL);
-			wglDeleteContext(hRC);
+	case WM_DESTROY:
+		// Deselect the current rendering context and delete it
+		wglMakeCurrent(hDC, NULL);
+		wglDeleteContext(hRC);
 
-			// Delete the palette if it was created
-			if(hPalette != NULL)
-				DeleteObject(hPalette);
-
-			// Tell the application to terminate after the window
-			// is gone.
-			PostQuitMessage(0);
-			break;
+		// Delete the palette if it was created
+		if (hPalette != NULL)
+			DeleteObject(hPalette);
+		//TwTerminate();
+		// Tell the application to terminate after the window
+		// is gone.
+		PostQuitMessage(0);
+		break;
 
 		// Window is resized.
-		case WM_SIZE:
-			// Call our function which modifies the clipping
-			// volume and viewport
-			ChangeSize(LOWORD(lParam), HIWORD(lParam));
-			break;
+	case WM_SIZE:
+		// Call our function which modifies the clipping
+		// volume and viewport
+		ChangeSize(LOWORD(lParam), HIWORD(lParam));
+		break;
 
 
 		// The painting function.  This message sent by Windows 
 		// whenever the screen needs updating.
-		case WM_PAINT:
+	case WM_PAINT:
+	{
+		// Call OpenGL drawing code
+		if (start == true)
+		{
+			for (int i = 0; i < 1000; i++)
 			{
-			// Call OpenGL drawing code
-			RenderScene();
+				RenderScene();
+				//rysuj();
+				//TwDraw();
+				SwapBuffers(hDC);
 
+				// Validate the newly painted client area
+				ValidateRect(hWnd, NULL);
+				iterations++;
+			}
+			start = false;
+		}
+		else
+		{
+			RenderScene();
+			//rysuj();
+			//TwDraw();
 			SwapBuffers(hDC);
 
 			// Validate the newly painted client area
-			ValidateRect(hWnd,NULL);
-			}
-			break;
+			ValidateRect(hWnd, NULL);
+		}
+	}
+	break;
 
-		// Windows is telling the application that it may modify
-		// the system palette.  This message in essance asks the 
-		// application for a new palette.
-		case WM_QUERYNEWPALETTE:
-			// If the palette was created.
-			if(hPalette)
-				{
-				int nRet;
+	// Windows is telling the application that it may modify
+	// the system palette.  This message in essance asks the 
+	// application for a new palette.
+	case WM_QUERYNEWPALETTE:
+		// If the palette was created.
+		if (hPalette)
+		{
+			int nRet;
 
-				// Selects the palette into the current device context
-				SelectPalette(hDC, hPalette, FALSE);
+			// Selects the palette into the current device context
+			SelectPalette(hDC, hPalette, FALSE);
 
-				// Map entries from the currently selected palette to
-				// the system palette.  The return value is the number 
-				// of palette entries modified.
-				nRet = RealizePalette(hDC);
+			// Map entries from the currently selected palette to
+			// the system palette.  The return value is the number 
+			// of palette entries modified.
+			nRet = RealizePalette(hDC);
 
-				// Repaint, forces remap of palette in current window
-				InvalidateRect(hWnd,NULL,FALSE);
+			// Repaint, forces remap of palette in current window
+			InvalidateRect(hWnd, NULL, FALSE);
 
-				return nRet;
-				}
-			break;
+			return nRet;
+		}
+		break;
 
-	
+
 		// This window may set the palette, even though it is not the 
 		// currently active window.
-		case WM_PALETTECHANGED:
-			// Don't do anything if the palette does not exist, or if
-			// this is the window that changed the palette.
-			if((hPalette != NULL) && ((HWND)wParam != hWnd))
-				{
-				// Select the palette into the device context
-				SelectPalette(hDC,hPalette,FALSE);
+	case WM_PALETTECHANGED:
+		// Don't do anything if the palette does not exist, or if
+		// this is the window that changed the palette.
+		if ((hPalette != NULL) && ((HWND)wParam != hWnd))
+		{
+			// Select the palette into the device context
+			SelectPalette(hDC, hPalette, FALSE);
 
-				// Map entries to system palette
-				RealizePalette(hDC);
-				
-				// Remap the current colors to the newly realized palette
-				UpdateColors(hDC);
-				return 0;
-				}
-			break;
+			// Map entries to system palette
+			RealizePalette(hDC);
+
+			// Remap the current colors to the newly realized palette
+			UpdateColors(hDC);
+			return 0;
+		}
+		break;
 
 		// Key press, check for arrow keys to do cube rotation.
-		case WM_KEYDOWN:
-			{
-			if(wParam == VK_UP)
-				xRot-= 5.0f;
+	case WM_KEYDOWN:
+	{
+		if (wParam == VK_UP)
+			xRot -= 5.0f;
 
-			if(wParam == VK_DOWN)
-				xRot += 5.0f;
+		if (wParam == VK_DOWN)
+			xRot += 5.0f;
 
-			if(wParam == VK_LEFT)
-				yRot -= 5.0f;
+		if (wParam == VK_LEFT)
+			yRot -= 5.0f;
 
-			if(wParam == VK_RIGHT)
-				yRot += 5.0f;
+		if (wParam == VK_RIGHT)
+			yRot += 5.0f;
 
-			if (wParam == 'Q')
-				params[0] += 1.0f;
-			if (wParam == 'A')
-				params[0] -= 1.0f;
-			if (wParam == 'W')
-				params[1] += 1.0f;
-			if (wParam == 'S')
-				params[1] -= 1.0f;
-			if (wParam == 'E')
-				params[2] += 1.0f;
-			if (wParam == 'D')
-				params[2] -= 1.0f;
-			if (wParam == 'R')
-				params[3] += 1.0f;
-			if (wParam == 'F')
-				params[3] -= 1.0f;
-			if (wParam == 'T')
-				params[4] += 1.0f;
-			if (wParam == 'G')
-				params[4] -= 1.0f;
-			if (wParam == 'Y')
-				params[5] += 1.0f;
-			if (wParam == 'H')
-				params[5] -= 1.0f;
-			if (wParam == 'U')
-				params[6] += 0.1f;
-			if (wParam == 'J')
-				params[6] -= 0.1f;
-			if (wParam == 'I')
-				iterations++;
-			if (wParam == 'K')
-				iterations--;
+		if (wParam == 'Q')
+			params[0] += 1.0f;
+		if (wParam == 'A')
+			params[0] -= 1.0f;
+		if (wParam == 'W')
+			params[1] += 1.0f;
+		if (wParam == 'S')
+			params[1] -= 1.0f;
+		if (wParam == 'E')
+			params[2] += 1.0f;
+		if (wParam == 'D')
+			params[2] -= 1.0f;
+		if (wParam == 'R')
+			params[3] += 1.0f;
+		if (wParam == 'F')
+			params[3] -= 1.0f;
+		if (wParam == 'T')
+			params[4] += 1.0f;
+		if (wParam == 'G')
+			params[4] -= 1.0f;
+		if (wParam == 'Y')
+			params[5] += 1.0f;
+		if (wParam == 'H')
+			params[5] -= 1.0f;
+		if (wParam == 'U')
+			params[6] += 0.1f;
+		if (wParam == 'J')
+			params[6] -= 0.1f;
+		if (wParam == 'I')
+			iterations++;
+		if (wParam == 'K')
+			iterations--;
+		if (wParam == VK_LBUTTON)
+			iterations = 0;
+		if (wParam == GLUT_LEFT)
+			iterations = 0;
+		if (wParam == WM_LBUTTONDOWN)
+			iterations = 0;
+		if (wParam == TW_KEY_BACKSPACE)
+			iterations = 0;
+		if (wParam == VK_SPACE)
+		//	start = true;
+		if (wParam == TW_KEY_LEFT)
+			iterations = 0;
+		if (keyPressed(VK_LBUTTON)) {
+			iterations = 0;
+		}
+		if (wParam == 0x201)
+		{
+			iterations = 0;
+		}
+		xRot = (const int)xRot % 360;
+		yRot = (const int)yRot % 360;
 
+		InvalidateRect(hWnd, NULL, FALSE);
+	}
+	break;
+	case WM_LBUTTONDOWN:
+		if (keyPressed(VK_LBUTTON))
+		{
+			start = true;
 
-			xRot = (const int)xRot % 360;
-			yRot = (const int)yRot % 360;
+		}
 
 			InvalidateRect(hWnd,NULL,FALSE);
-			}
+			break;
+		case WM_RBUTTONDOWN:
+			if (keyPressed(VK_RBUTTON))
+				iterations = 0;
+
+			InvalidateRect(hWnd, NULL, FALSE);
 			break;
 
+	/*	case WM_LBUTTONUP:
+			if (wParam == GLUT_LEFT)
+				iterations++;
+			if (keyPressed(VK_LBUTTON))
+				iterations++;
+			if (wParam == WM_LBUTTONDOWN)
+				iterations = 0;
+			if (wParam == GLUT_LEFT_BUTTON)
+				iterations++;
+			iterations++;
+			break;*/
 		// A menu command
 		case WM_COMMAND:
 			{
@@ -788,8 +1166,6 @@ LRESULT CALLBACK WndProc(       HWND    hWnd,
 
     return (0L);
 	}
-
-
 
 
 // Dialog procedure.

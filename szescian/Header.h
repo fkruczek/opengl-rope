@@ -15,9 +15,10 @@ private:
 	GLfloat ratio_1 = 1.0f;
 	GLfloat ratio_2 = 2.0f;
 	GLfloat ratio_3 = 0.8f;
-	GLfloat ratio_4 = 0.2f;
+	GLfloat ratio_4 = 0.3f;
 public:
 	point();
+	GLfloat *vector = new GLfloat[3];
 	void set_tie_a(GLfloat x, GLfloat y, GLfloat z);
 	void set_tie_a(GLfloat *vector);
 	void set_tie_b(GLfloat x, GLfloat y, GLfloat z);
